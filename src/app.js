@@ -1,0 +1,13 @@
+const express = require('express');
+const User = require('./User/User');
+
+const app = express();
+
+app.post('/api/1.0/users', (req, res) => {
+  User.create(req.body).then(() => {
+    return res.status(200).send({
+      message: 'User created',
+    });
+  });
+});
+module.exports = app;
