@@ -1,14 +1,11 @@
 const express = require('express');
-const User = require('./User/User');
-
+const UserRouter = require('./User/UserRouter');
 const app = express();
+
+// body parser
 app.use(express.json());
 
-app.post('/api/1.0/users', (req, res) => {
-  User.create(req.body).then(() => {
-    return res.status(200).send({
-      message: 'User created',
-    });
-  });
-});
+// user routes
+app.use(UserRouter);
+
 module.exports = app;

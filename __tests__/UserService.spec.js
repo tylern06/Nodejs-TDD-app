@@ -58,11 +58,31 @@ describe('User Registration', () => {
         // insert new user to database
         User.findAll().then((userList) => {
           const savedUser = userList[0];
-          console.log('created user', savedUser);
+          // console.log('created user', savedUser);
           expect(userList.length).toBe(1);
           expect(savedUser.username).toBe('user1');
           expect(savedUser.email).toBe('user1@gmail.com');
 
+          // use done to wait for async request to complete
+          done();
+        });
+      });
+  });
+  it('it hashes the password', (done) => {
+    // mock api request using supertest request
+    // mock body message with user info to server
+    request(app)
+      .post('/api/1.0/users')
+      .send({
+        username: 'user1',
+        email: 'user1@gmail.com',
+        password: 'P4ssword',
+      })
+      .then(() => {
+        // insert new user to database
+        User.findAll().then((userList) => {
+          const savedUser = userList[0];
+          expect(savedUser.password).not.toBe('P4ssword');
           // use done to wait for async request to complete
           done();
         });
