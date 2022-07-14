@@ -1,0 +1,10 @@
+{
+    "database": { 
+        "database": "devDb",
+        "password": "devPw",
+        "username": "devUser",
+        "storage": "./development.sqlite3",
+        "dialect": "sqlite",
+        "logging": false
+    }
+}
