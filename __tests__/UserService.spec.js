@@ -18,7 +18,7 @@ const validUser = {
   email: 'user1@gmail.com',
   password: 'P4ssword',
 };
-const postUser = async (post) => {
+const postUser = async (post = validUser) => {
   // mock app test server with post request api
   return request(app).post('/api/1.0/users').send(post);
 };
@@ -68,25 +68,33 @@ describe('User Registration', () => {
   });
 
   it.each`
-    field         | message
-    ${'username'} | ${'Username cannot be null'}
-    ${'email'}    | ${'Email cannot be null'}
-    ${'password'} | ${'Password cannot be null'}
-  `('when $field is null $message is received', async ({ field, message }) => {
-    let user = { username: 'user1', email: 'user1@email.com', password: 'P4ssword' };
-    user[field] = null;
+    field         | value              | message
+    ${'username'} | ${null}            | ${'Username cannot be null'}
+    ${'username'} | ${'usr'}           | ${'Must have min 4 and max 32 characters'}
+    ${'username'} | ${'a'.repeat(33)}  | ${'Must have min 4 and max 32 characters'}
+    ${'email'}    | ${null}            | ${'Email cannot be null'}
+    ${'email'}    | ${'mail'}          | ${'Email is not valid'}
+    ${'password'} | ${null}            | ${'Password cannot be null'}
+    ${'password'} | ${'pass'}          | ${'Password must be at least 6 characters'}
+    ${'password'} | ${'allowcase'}     | ${'Password must have at least 1 uppercase character and 1 number'}
+    ${'password'} | ${'1234567'}       | ${'Password must have at least 1 uppercase character and 1 number'}
+    ${'password'} | ${'lowerandUPPER'} | ${'Password must have at least 1 uppercase character and 1 number'}
+    ${'password'} | ${'UPPER44'}       | ${'Password must have at least 1 uppercase character and 1 number'}
+  `('return $message when field is $field and value is $value', async ({ field, message, value }) => {
+    let user = {
+      username: 'user1',
+      email: 'user1@email.com',
+      password: 'P4ssword',
+    };
+    user[field] = value;
     const response = await postUser(user);
     expect(response.body.validationErrors[field]).toBe(message);
   });
 
-  it('returns size validation error is username is less than 4 chars', async () => {
-    // mock api request using supertest request
-    // mock body message with user info to server
-    const response = await postUser({
-      username: 'use',
-      email: 'user1@gmail.com',
-      password: 'P4ssword',
-    });
-    expect(response.body.validationErrors.username).toBe('Must have min 4 and max 32 characters');
+  it('returns Email in use when same email already exists', async () => {
+    await User.create({ ...validUser });
+    const response = await postUser();
+    // console.log('response', response);
+    expect(response.body.validationErrors.email).toBe('Email in use');
   });
 });

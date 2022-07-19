@@ -9,7 +9,7 @@ User.init(
   {
     username: { type: Sequelize.STRING },
     password: { type: Sequelize.STRING },
-    email: { type: Sequelize.STRING },
+    email: { type: Sequelize.STRING, unique: true },
   },
   {
     sequelize, // pass sequelize instance
