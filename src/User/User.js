@@ -10,6 +10,7 @@ User.init(
     username: { type: Sequelize.STRING },
     password: { type: Sequelize.STRING },
     email: { type: Sequelize.STRING, unique: true },
+    inactive: { type: Sequelize.BOOLEAN, defaultValue: true },
   },
   {
     sequelize, // pass sequelize instance

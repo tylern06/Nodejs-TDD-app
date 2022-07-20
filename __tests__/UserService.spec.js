@@ -5,7 +5,7 @@ const sequelize = require('../src/config/database');
 
 beforeAll(function () {
   // initailize database before each test case
-  return sequelize.sync();
+  return sequelize.sync({ force: true });
 });
 
 beforeEach(function () {
@@ -15,7 +15,7 @@ beforeEach(function () {
 
 const validUser = {
   username: 'user1',
-  email: 'user1@gmail.com',
+  email: 'user1@mail.com',
   password: 'P4ssword',
 };
 const postUser = async (post = validUser) => {
@@ -26,6 +26,7 @@ describe('User Registration', () => {
   it('should return 200 when user sign up is valid', async () => {
     // mock api request using supertest request
     const response = await postUser(validUser);
+    console.log('user registration', response.body);
     expect(response.status).toBe(200);
   });
   it('return success message when sign up is valid', async () => {
@@ -42,7 +43,7 @@ describe('User Registration', () => {
     const userList = await User.findAll();
     const savedUser = userList[0];
     expect(savedUser.username).toBe('user1');
-    expect(savedUser.email).toBe('user1@gmail.com');
+    expect(savedUser.email).toBe('user1@mail.com');
 
     // use done to wait for callback async request to complete
   });
@@ -61,7 +62,7 @@ describe('User Registration', () => {
     // mock body message with user info to server
     const response = await postUser({
       username: null,
-      email: 'user1@gmail.com',
+      email: 'user1@mail.com',
       password: 'P4ssword',
     });
     expect(response.statusCode).toBe(400);
@@ -80,16 +81,19 @@ describe('User Registration', () => {
     ${'password'} | ${'1234567'}       | ${'Password must have at least 1 uppercase character and 1 number'}
     ${'password'} | ${'lowerandUPPER'} | ${'Password must have at least 1 uppercase character and 1 number'}
     ${'password'} | ${'UPPER44'}       | ${'Password must have at least 1 uppercase character and 1 number'}
-  `('return $message when field is $field and value is $value', async ({ field, message, value }) => {
-    let user = {
-      username: 'user1',
-      email: 'user1@email.com',
-      password: 'P4ssword',
-    };
-    user[field] = value;
-    const response = await postUser(user);
-    expect(response.body.validationErrors[field]).toBe(message);
-  });
+  `(
+    'return $message when field is $field and value is $value',
+    async ({ field, message, value }) => {
+      let user = {
+        username: 'user1',
+        email: 'user1@email.com',
+        password: 'P4ssword',
+      };
+      user[field] = value;
+      const response = await postUser(user);
+      expect(response.body.validationErrors[field]).toBe(message);
+    }
+  );
 
   it('returns Email in use when same email already exists', async () => {
     await User.create({ ...validUser });
@@ -97,4 +101,19 @@ describe('User Registration', () => {
     // console.log('response', response);
     expect(response.body.validationErrors.email).toBe('Email in use');
   });
+
+  it('it returns inactive is true for new user', async () => {
+    await postUser();
+    const users = await User.findAll();
+    const user = users[0];
+    // console.log('found user', users);
+    expect(user.inactive).toBe(true);
+  });
+
+  // it('returns errors for both username is null and email is in use', async () => {
+  //   await User.create({ ...validUser });
+  //   const response = await postUser({ username: null, email: 'user1@mail.com', password: 'P4ssword' });
+  //   console.log('response', Object.keys(response.body.validationErrors));
+  //   expect(Object.keys(response.body.validationErrors)).toEqual(['username', 'email']);
+  // });
 });

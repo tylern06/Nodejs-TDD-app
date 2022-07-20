@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { check, validationResult } = require('express-validator');
+const User = require('./User');
 const UserService = require('./UserService');
 
 // apply express validation in middleware
@@ -12,7 +13,18 @@ router.post(
     .bail() // escape chaining if username is null
     .isLength({ min: 4, max: 32 })
     .withMessage('Must have min 4 and max 32 characters'),
-  check('email').notEmpty().withMessage('Email cannot be null').bail().isEmail().withMessage('Email is not valid'),
+  check('email')
+    .notEmpty()
+    .withMessage('Email cannot be null')
+    .bail()
+    .isEmail()
+    .withMessage('Email is not valid'),
+  // .custom((email) => {
+  //   const user = User.findOne({ where: { email: email } });
+  //   if (user) {
+  //     throw new Error('Email is in use')
+  //   }
+  // }),
   check('password')
     .notEmpty()
     .withMessage('Password cannot be null')
@@ -21,7 +33,9 @@ router.post(
     .withMessage('Password must be at least 6 characters')
     .bail()
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/)
-    .withMessage('Password must have at least 1 uppercase character and 1 number'),
+    .withMessage(
+      'Password must have at least 1 uppercase character and 1 number'
+    ),
   async (req, res) => {
     // get errors from req
     const errors = validationResult(req);
@@ -34,10 +48,13 @@ router.post(
       return res.status(400).send({ validationErrors });
     }
     try {
-      await UserService.save(req.body);
+      const savedUser = await UserService.save(req.body);
+      // console.log('saved user', savedUser);
     } catch (err) {
       // console.log('save user error', err);
-      return res.status(400).send({ validationErrors: { email: 'Email in use' } });
+      return res
+        .status(400)
+        .send({ validationErrors: { email: 'Email in use' } });
     }
     return res.status(200).send({
       message: 'User created',
