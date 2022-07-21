@@ -118,6 +118,14 @@ describe('User Registration', () => {
     expect(user.inactive).toBe(true);
   });
 
+  it('create activation token for new user', async () => {
+    await postUser();
+    const users = await User.findAll();
+    const user = users[0];
+    // console.log('found user', users);
+    expect(user.activationToken).toBeTruthy();
+  });
+
   // it('returns errors for both username is null and email is in use', async () => {
   //   await User.create({ ...validUser });
   //   const response = await postUser({ username: null, email: 'user1@mail.com', password: 'P4ssword' });
