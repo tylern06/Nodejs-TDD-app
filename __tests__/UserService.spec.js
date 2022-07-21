@@ -2,6 +2,7 @@ const request = require('supertest');
 const app = require('../src/app');
 const User = require('../src/User/User');
 const sequelize = require('../src/config/database');
+const nodemailerStub = require('nodemailer-stub');
 
 beforeAll(function () {
   // initailize database before each test case
@@ -126,6 +127,18 @@ describe('User Registration', () => {
     expect(user.activationToken).toBeTruthy();
   });
 
+  // it('sends activation token to email', async () => {
+  //   await postUser();
+  //   // get last mail of nodemailer stub
+  //   const lastMail = nodemailerStub.interactsWithMail.lastMail();
+  //   console.log('last mail', lastMail);
+  //   // check if last mail contains token
+  //   expect(lastMail.to[0]).toBe('user1@mail.com');
+  //   // query for saved user
+  //   const users = await User.findAll();
+  //   const savedUser = users[0];
+  //   expect(lastMail[0].content).toContain(savedUser.activationToken);
+  // });
   // it('returns errors for both username is null and email is in use', async () => {
   //   await User.create({ ...validUser });
   //   const response = await postUser({ username: null, email: 'user1@mail.com', password: 'P4ssword' });
