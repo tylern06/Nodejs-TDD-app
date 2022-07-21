@@ -110,6 +110,14 @@ describe('User Registration', () => {
     expect(user.inactive).toBe(true);
   });
 
+  it('it returns inactive is true for new user when inactive set as false', async () => {
+    await postUser({ ...validUser, inactive: false });
+    const users = await User.findAll();
+    const user = users[0];
+    // console.log('found user', users);
+    expect(user.inactive).toBe(true);
+  });
+
   // it('returns errors for both username is null and email is in use', async () => {
   //   await User.create({ ...validUser });
   //   const response = await postUser({ username: null, email: 'user1@mail.com', password: 'P4ssword' });
