@@ -1,12 +1,10 @@
 const bcrypt = require('bcrypt');
 const User = require('./User');
 const crypto = require('crypto');
+const EmailService = require('../Email/EmailService');
 
 const generateToken = (length) => {
-  return crypto
-    .randomBytes(length)
-    .toString('hex')
-    .substring(0, length);
+  return crypto.randomBytes(length).toString('hex').substring(0, length);
 };
 const save = async (body) => {
   const { username, password, email } = body;
@@ -20,6 +18,8 @@ const save = async (body) => {
   };
   // console.log('created user', user);
   await User.create(user);
+
+  await EmailService.sendActivationCode(email, token);
 };
 
 module.exports = { save };
