@@ -1,0 +1,58 @@
+{
+    "name": "express-ws",
+    "version": "1.0.0",
+    "description": "tdd with express",
+    "main": "app.js",
+    "scripts": {
+        "start": "cross-env NODE_ENV=development nodemon index.js",
+        "test": "cross-env NODE_ENV=test jest --watch",
+        "lint": "eslint ."
+    },
+    "author": "Tyler Nguyen",
+    "license": "ISC",
+    "dependencies": {
+        "bcrypt": "^5.0.1",
+        "config": "^3.3.7",
+        "express": "^4.18.1",
+        "express-validator": "^6.14.2",
+        "nodemailer": "^6.7.7",
+        "sequelize": "^6.21.3",
+        "sqlite3": "^5.0.8"
+    },
+    "devDependencies": {
+        "cross-env": "^7.0.3",
+        "eslint": "^8.19.0",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-plugin-prettier": "^4.2.1",
+        "jest": "^28.1.2",
+        "nodemailer-stub": "^1.2.2",
+        "nodemon": "^2.0.19",
+        "prettier": "^2.7.1",
+        "supertest": "^6.2.4"
+    },
+    "eslintConfig": {
+        "parserOptions": {
+            "ecmaVersion": 2018
+        },
+        "extends": [
+            "eslint:recommended",
+            "plugin:prettier/recommended"
+        ],
+        "plugins": [
+            "prettier"
+        ],
+        "env": {
+            "node": true,
+            "es6": true,
+            "jest": true
+        },
+        "rules": {
+            "eqeqeq": "warn",
+            "prettier/prettier": "warn"
+        }
+    },
+    "prettier": {
+        "singleQuote": true,
+        "printWidth": 120
+    }
+}
