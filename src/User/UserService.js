@@ -3,6 +3,7 @@ const User = require('./User');
 const crypto = require('crypto');
 const sequelize = require('../config/database');
 const EmailService = require('../email/EmailService');
+const EmailException = require('../email/EmailException');
 
 const generateToken = (length) => {
   return crypto.randomBytes(length).toString('hex').substring(0, length);
@@ -28,7 +29,9 @@ const save = async (body) => {
   } catch (err) {
     console.log('send email err', err);
     await transaction.rollback();
-    throw new Error(err);
+    // pass error up to the caller
+    // throw new Error(err);
+    throw new EmailException();
   }
 };
 

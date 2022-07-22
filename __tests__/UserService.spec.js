@@ -157,9 +157,7 @@ describe('User Registration', () => {
 
   it('returns Email failure message if email send fails', async () => {
     // mock a rejected response from email send activation code meethod
-    const mockActivation = jest
-      .spyOn(EmailService, 'sendActivationCode')
-      .mockRejectedValue({ message: 'Fail to deliver email' });
+    const mockActivation = jest.spyOn(EmailService, 'sendActivationCode').mockRejectedValue();
     const response = await postUser();
     expect(response.status).toBe(502);
     mockActivation.mockRestore();
@@ -167,13 +165,14 @@ describe('User Registration', () => {
   });
 
   it('does not save user to database if email send fails', async () => {
-    // mock a rejected response from email send activation code meethod
+    // mock (implements) a new Error with the following message for EmailService send activation code method
     const mockActivation = jest
       .spyOn(EmailService, 'sendActivationCode')
       .mockRejectedValue({ message: 'Fail to deliver email' });
-    const response = await postUser();
+    await postUser();
     const users = await User.findAll();
     const savedUser = users[0];
+    // console.log('mockActivation response', mockActivation);
     mockActivation.mockRestore();
     expect(savedUser).toBeFalsy();
   });
