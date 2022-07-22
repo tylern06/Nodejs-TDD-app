@@ -1,17 +1,18 @@
 const request = require('supertest');
 const app = require('../src/app');
-const User = require('../src/User/User');
+const User = require('../src/user/User');
 const sequelize = require('../src/config/database');
 const nodemailerStub = require('nodemailer-stub');
+const EmailService = require('../src/email/EmailService');
 
 beforeAll(function () {
   // initailize database before each test case
   return sequelize.sync({ force: true });
 });
 
-beforeEach(function () {
+beforeEach(async () => {
   // clean User table before each test
-  return User.destroy({ truncate: true });
+  await User.destroy({ truncate: true });
 });
 
 const validUser = {
@@ -26,7 +27,7 @@ const postUser = async (post = validUser) => {
 describe('User Registration', () => {
   it('should return 200 when user sign up is valid', async () => {
     // mock api request using supertest request
-    const response = await postUser(validUser);
+    const response = await postUser();
     console.log('user registration', response.body);
     expect(response.status).toBe(200);
   });
@@ -67,6 +68,13 @@ describe('User Registration', () => {
       password: 'P4ssword',
     });
     expect(response.statusCode).toBe(400);
+  });
+
+  it('returns errors for both username is null and email is in use', async () => {
+    await User.create({ ...validUser });
+    const response = await postUser({ username: null, email: 'user1@mail.com', password: 'P4ssword' });
+    console.log('response', Object.keys(response.body.validationErrors));
+    expect(Object.keys(response.body.validationErrors)).toEqual(['username', 'email']);
   });
 
   it.each`
@@ -136,10 +144,37 @@ describe('User Registration', () => {
     const savedUser = users[0];
     expect(lastMail.content).toContain(savedUser.activationToken);
   });
-  // it('returns errors for both username is null and email is in use', async () => {
-  //   await User.create({ ...validUser });
-  //   const response = await postUser({ username: null, email: 'user1@mail.com', password: 'P4ssword' });
-  //   console.log('response', Object.keys(response.body.validationErrors));
-  //   expect(Object.keys(response.body.validationErrors)).toEqual(['username', 'email']);
-  // });
+
+  it('returns 502 Gateway error if email send fails', async () => {
+    // mock a rejected response from email send activation code meethod
+    const mockActivation = jest
+      .spyOn(EmailService, 'sendActivationCode')
+      .mockRejectedValue({ message: 'Fail to deliver email' });
+    const response = await postUser();
+    expect(response.status).toBe(502);
+    mockActivation.mockRestore();
+  });
+
+  it('returns Email failure message if email send fails', async () => {
+    // mock a rejected response from email send activation code meethod
+    const mockActivation = jest
+      .spyOn(EmailService, 'sendActivationCode')
+      .mockRejectedValue({ message: 'Fail to deliver email' });
+    const response = await postUser();
+    expect(response.status).toBe(502);
+    mockActivation.mockRestore();
+    expect(response.body.message).toBe('Email Failure');
+  });
+
+  it('does not save user to database if email send fails', async () => {
+    // mock a rejected response from email send activation code meethod
+    const mockActivation = jest
+      .spyOn(EmailService, 'sendActivationCode')
+      .mockRejectedValue({ message: 'Fail to deliver email' });
+    const response = await postUser();
+    const users = await User.findAll();
+    const savedUser = users[0];
+    mockActivation.mockRestore();
+    expect(savedUser).toBeFalsy();
+  });
 });

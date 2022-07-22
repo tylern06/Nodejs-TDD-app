@@ -1,8 +1,7 @@
-const nodemailer = require('nodemailer');
-const nodemailerStub = require('nodemailer-stub');
+const transporter = require('../config/emailTransporter');
 
 const sendActivationCode = async (email, token) => {
-  const transporter = nodemailer.createTransport(nodemailerStub.stubTransport);
+  // use nodemail stub to mock email send
   await transporter.sendMail({
     from: 'My App <info@my-app.com>',
     to: email,
