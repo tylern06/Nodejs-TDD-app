@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { check, validationResult } = require('express-validator');
 const UserService = require('./UserService');
+const User = require('./User');
 
 // apply express validation in middleware
 router.post(
@@ -12,13 +13,20 @@ router.post(
     .bail() // escape chaining if username is null
     .isLength({ min: 4, max: 32 })
     .withMessage('Must have min 4 and max 32 characters'),
-  check('email').notEmpty().withMessage('Email cannot be null').bail().isEmail().withMessage('Email is not valid'),
-  // .custom((email) => {
-  //   const user = User.findOne({ where: { email: email } });
-  //   if (user) {
-  //     throw new Error('Email is in use')
-  //   }
-  // }),
+  check('email')
+    .notEmpty()
+    .withMessage('Email cannot be null')
+    .bail()
+    .isEmail()
+    .withMessage('Email is not valid')
+    .bail()
+    .custom(async (email) => {
+      const user = await User.findOne({ where: { email: email } });
+      // console.log('found user', user);
+      if (user) {
+        throw new Error('Email in use');
+      }
+    }),
   check('password')
     .notEmpty()
     .withMessage('Password cannot be null')
@@ -41,14 +49,11 @@ router.post(
     }
     try {
       await UserService.save(req.body);
-      // console.log('saved user', savedUser);
+      return res.status(200).send({ message: 'User created' });
     } catch (err) {
-      // console.log('save user error', err);
-      return res.status(400).send({ validationErrors: { email: 'Email in use' } });
+      console.log('save user error', err);
+      return res.status(502).send({ message: 'Email Failure' });
     }
-    return res.status(200).send({
-      message: 'User created',
-    });
   }
 );
 
