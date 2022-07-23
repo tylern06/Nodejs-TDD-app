@@ -6,14 +6,38 @@ const nodemailerStub = require('nodemailer-stub');
 const SMTPServer = require('smtp-server').SMTPServer;
 const EmailService = require('../src/email/EmailService');
 
-beforeAll(function () {
+let server, lastMail;
+
+beforeAll(async () => {
+  // setup smtp server before all test
+  server = new SMTPServer({
+    authOptional: true,
+    onData(stream, session, callback) {
+      let mailBody;
+      stream.on('data', (data) => {
+        mailBody += data.toString();
+        // console.log('mail body', mailBody);
+      });
+      stream.on('end', () => {
+        lastMail = mailBody;
+        callback();
+      });
+    },
+  });
+
+  await server.listen(8587, 'localhost');
   // initailize database before each test case
-  return sequelize.sync({ force: true });
+  await sequelize.sync({ force: true });
 });
 
 beforeEach(async () => {
   // clean User table before each test
   await User.destroy({ truncate: true });
+});
+
+afterAll(async () => {
+  // close smtp server after test is done
+  await server.close();
 });
 
 const validUser = {
@@ -29,7 +53,7 @@ describe('User Registration', () => {
   it('should return 200 when user sign up is valid', async () => {
     // mock api request using supertest request
     const response = await postUser();
-    console.log('user registration', response.body);
+    // console.log('user registration', response.body);
     expect(response.status).toBe(200);
   });
   it('return success message when sign up is valid', async () => {
@@ -74,7 +98,7 @@ describe('User Registration', () => {
   it('returns errors for both username is null and email is in use', async () => {
     await User.create({ ...validUser });
     const response = await postUser({ username: null, email: 'user1@mail.com', password: 'P4ssword' });
-    console.log('response', Object.keys(response.body.validationErrors));
+    // console.log('response', Object.keys(response.body.validationErrors));
     expect(Object.keys(response.body.validationErrors)).toEqual(['username', 'email']);
   });
 
@@ -136,26 +160,8 @@ describe('User Registration', () => {
   it('sends activation token to email', async () => {
     // get last mail of nodemailer stub
     // const lastMail = nodemailerStub.interactsWithMail.lastMail();
-    let lastMail;
-    // setup smtp server
-    const server = new SMTPServer({
-      authOptional: true,
-      onData(stream, session, callback) {
-        let mailBody;
-        stream.on('data', (data) => {
-          mailBody += data.toString();
-          console.log('mail body', mailBody);
-        });
-        stream.on('end', () => {
-          lastMail = mailBody;
-          callback();
-        });
-      },
-    });
 
-    await server.listen(8587, 'localhost');
     await postUser();
-    await server.close();
     // console.log('last mail', lastMail);
     // check if last mail contains token
     expect(lastMail).toContain('user1@mail.com');

@@ -27,7 +27,7 @@ const save = async (body) => {
     await EmailService.sendActivationCode(email, token);
     await transaction.commit();
   } catch (err) {
-    console.log('send email err', err);
+    // console.log('send email err', err);
     await transaction.rollback();
     // pass error up to the caller
     // throw new Error(err);

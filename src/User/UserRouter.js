@@ -51,7 +51,7 @@ router.post(
       await UserService.save(req.body);
       return res.status(200).send({ message: 'User created' });
     } catch (err) {
-      console.log('save user error', err);
+      // console.log('save user error', err);
       return res.status(502).send({ message: err.message });
     }
   }
