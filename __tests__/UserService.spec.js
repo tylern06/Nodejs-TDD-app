@@ -3,6 +3,7 @@ const app = require('../src/app');
 const User = require('../src/user/User');
 const sequelize = require('../src/config/database');
 const nodemailerStub = require('nodemailer-stub');
+const SMTPServer = require('smtp-server').SMTPServer;
 const EmailService = require('../src/email/EmailService');
 
 beforeAll(function () {
@@ -133,16 +134,35 @@ describe('User Registration', () => {
   });
 
   it('sends activation token to email', async () => {
-    await postUser();
     // get last mail of nodemailer stub
-    const lastMail = nodemailerStub.interactsWithMail.lastMail();
+    // const lastMail = nodemailerStub.interactsWithMail.lastMail();
+    let lastMail;
+    // setup smtp server
+    const server = new SMTPServer({
+      authOptional: true,
+      onData(stream, session, callback) {
+        let mailBody;
+        stream.on('data', (data) => {
+          mailBody += data.toString();
+          console.log('mail body', mailBody);
+        });
+        stream.on('end', () => {
+          lastMail = mailBody;
+          callback();
+        });
+      },
+    });
+
+    await server.listen(8587, 'localhost');
+    await postUser();
+    await server.close();
     // console.log('last mail', lastMail);
     // check if last mail contains token
-    expect(lastMail.to[0]).toBe('user1@mail.com');
+    expect(lastMail).toContain('user1@mail.com');
     // query for saved user
     const users = await User.findAll();
     const savedUser = users[0];
-    expect(lastMail.content).toContain(savedUser.activationToken);
+    expect(lastMail).toContain(savedUser.activationToken);
   });
 
   it('returns 502 Gateway error if email send fails', async () => {
