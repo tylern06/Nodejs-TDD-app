@@ -7,8 +7,10 @@ const SMTPServer = require('smtp-server').SMTPServer;
 const EmailService = require('../src/email/EmailService');
 
 let server, lastMail;
+let simulateFailEmail;
 
 beforeAll(async () => {
+  simulateFailEmail = false;
   // setup smtp server before all test
   server = new SMTPServer({
     authOptional: true,
@@ -19,8 +21,14 @@ beforeAll(async () => {
         // console.log('mail body', mailBody);
       });
       stream.on('end', () => {
-        lastMail = mailBody;
-        callback();
+        if (simulateFailEmail) {
+          let err = new Error('Mailbox failure');
+          err.statusCode = 553;
+          callback(err);
+        } else {
+          lastMail = mailBody;
+          callback();
+        }
       });
     },
   });
@@ -31,6 +39,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  simulateFailEmail = false;
   // clean User table before each test
   await User.destroy({ truncate: true });
 });
@@ -173,33 +182,36 @@ describe('User Registration', () => {
 
   it('returns 502 Gateway error if email send fails', async () => {
     // mock a rejected response from email send activation code meethod
-    const mockActivation = jest
-      .spyOn(EmailService, 'sendActivationCode')
-      .mockRejectedValue({ message: 'Fail to deliver email' });
+    // const mockActivation = jest
+    //   .spyOn(EmailService, 'sendActivationCode')
+    //   .mockRejectedValue({ message: 'Fail to deliver email' });
+    simulateFailEmail = true;
     const response = await postUser();
     expect(response.status).toBe(502);
-    mockActivation.mockRestore();
+    // mockActivation.mockRestore();
   });
 
   it('returns Email failure message if email send fails', async () => {
     // mock a rejected response from email send activation code meethod
-    const mockActivation = jest.spyOn(EmailService, 'sendActivationCode').mockRejectedValue();
+    // const mockActivation = jest.spyOn(EmailService, 'sendActivationCode').mockRejectedValue();
+    simulateFailEmail = true;
     const response = await postUser();
     expect(response.status).toBe(502);
-    mockActivation.mockRestore();
+    // mockActivation.mockRestore();
     expect(response.body.message).toBe('Email Failure');
   });
 
   it('does not save user to database if email send fails', async () => {
     // mock (implements) a new Error with the following message for EmailService send activation code method
-    const mockActivation = jest
-      .spyOn(EmailService, 'sendActivationCode')
-      .mockRejectedValue({ message: 'Fail to deliver email' });
+    // const mockActivation = jest
+    //   .spyOn(EmailService, 'sendActivationCode')
+    //   .mockRejectedValue({ message: 'Fail to deliver email' });
+    simulateFailEmail = true;
     await postUser();
     const users = await User.findAll();
     const savedUser = users[0];
     // console.log('mockActivation response', mockActivation);
-    mockActivation.mockRestore();
+    // mockActivation.mockRestore();
     expect(savedUser).toBeFalsy();
   });
 });
