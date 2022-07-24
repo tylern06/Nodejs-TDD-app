@@ -2,9 +2,7 @@ const request = require('supertest');
 const app = require('../src/app');
 const User = require('../src/user/User');
 const sequelize = require('../src/config/database');
-const nodemailerStub = require('nodemailer-stub');
 const SMTPServer = require('smtp-server').SMTPServer;
-const EmailService = require('../src/email/EmailService');
 
 let server, lastMail;
 let simulateFailEmail;
@@ -213,5 +211,19 @@ describe('User Registration', () => {
     // console.log('mockActivation response', mockActivation);
     // mockActivation.mockRestore();
     expect(savedUser).toBeFalsy();
+  });
+});
+
+describe('Acount Activation Code Method', () => {
+  it('should activate account when correct activation code is sent', async () => {
+    // create new user and send activation code
+    await postUser();
+    let users = await User.findAll();
+    let token = users[0].activationToken;
+    await request(app)
+      .post('/api/1.0/user/token/' + token)
+      .send();
+    users = await User.findAll();
+    expect(users[0].inactive).toBe(false);
   });
 });

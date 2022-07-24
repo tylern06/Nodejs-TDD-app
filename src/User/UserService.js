@@ -35,4 +35,9 @@ const save = async (body) => {
   }
 };
 
-module.exports = { save };
+const activate = async (token) => {
+  let user = await User.findOne({ where: { activationToken: token } });
+  user.inactive = false;
+  await user.save();
+};
+module.exports = { save, activate };

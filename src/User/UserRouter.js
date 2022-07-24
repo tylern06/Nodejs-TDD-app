@@ -57,4 +57,9 @@ router.post(
   }
 );
 
+router.post('/api/1.0/user/token/:token', async (req, res) => {
+  await UserService.activate(req.params.token);
+  res.send();
+});
+
 module.exports = router;
