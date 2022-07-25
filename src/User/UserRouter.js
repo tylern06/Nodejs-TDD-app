@@ -67,4 +67,10 @@ router.post('/api/1.0/user/token/:token', async (req, res) => {
   }
 });
 
+router.get('/api/1.0/users', async (req, res) => {
+  let users = await UserService.getUsers();
+  // console.log('get users response', users);
+  res.send(users);
+});
+
 module.exports = router;

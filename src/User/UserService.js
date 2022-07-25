@@ -46,4 +46,19 @@ const activate = async (token) => {
   user.activationToken = null;
   await user.save();
 };
-module.exports = { save, activate };
+
+const getUsers = async (page = 0, size = 10) => {
+  const usersWithCount = await User.findAndCountAll({
+    where: { inactive: false },
+    limit: size,
+    offset: page * size,
+  });
+  // console.log('users with count: ', usersWithCount);
+  return {
+    content: usersWithCount.rows,
+    page,
+    size,
+    totalPages: Math.ceil(usersWithCount.count / size),
+  };
+};
+module.exports = { save, activate, getUsers };
