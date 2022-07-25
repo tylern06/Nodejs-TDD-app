@@ -226,4 +226,33 @@ describe('Acount Activation Code Method', () => {
     users = await User.findAll();
     expect(users[0].inactive).toBe(false);
   });
+  it('removes activation token from user table after successful activation', async () => {
+    // create new user and send activation code
+    await postUser();
+    let users = await User.findAll();
+    let token = users[0].activationToken;
+    await request(app)
+      .post('/api/1.0/user/token/' + token)
+      .send();
+    users = await User.findAll();
+    expect(users[0].activationToken).toBeFalsy();
+  });
+  it('does not activate user account when token is wrong', async () => {
+    await postUser();
+    let users = await User.findAll();
+    let token = 'wrong token';
+    await request(app)
+      .post('/api/1.0/user/token/' + token)
+      .send();
+    users = await User.findAll();
+    expect(users[0].inactive).toBe(true);
+  });
+  it('returns bad request when user account token is wrong', async () => {
+    await postUser();
+    let token = 'wrong token';
+    let response = await request(app)
+      .post('/api/1.0/user/token/' + token)
+      .send();
+    expect(response.status).toBe(400);
+  });
 });

@@ -4,10 +4,12 @@ const crypto = require('crypto');
 const sequelize = require('../config/database');
 const EmailService = require('../email/EmailService');
 const EmailException = require('../email/EmailException');
+const InvalidTokenException = require('./InvalidTokenException');
 
 const generateToken = (length) => {
   return crypto.randomBytes(length).toString('hex').substring(0, length);
 };
+
 const save = async (body) => {
   const { username, password, email } = body;
   const hash = await bcrypt.hash(password, 10);
@@ -37,7 +39,11 @@ const save = async (body) => {
 
 const activate = async (token) => {
   let user = await User.findOne({ where: { activationToken: token } });
+  if (!user) {
+    throw new InvalidTokenException();
+  }
   user.inactive = false;
+  user.activationToken = null;
   await user.save();
 };
 module.exports = { save, activate };
